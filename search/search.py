@@ -87,17 +87,82 @@ def depthFirstSearch(problem: SearchProblem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    edges = util.Stack()
+    exploredEdges = set()
+    edges.push((problem.getStartState(), [])) # push the initial state with no actions (origin)
+    while not edges.isEmpty():
+        currentEdge, actions = edges.pop() # get the current edge and actions to origin
+        if problem.isGoalState(currentEdge):
+           return actions
+           
+         # if not goal state
+        exploredEdges.add(currentEdge)
+
+        for successorEdge, action, stepCost in problem.getSuccessors(currentEdge):
+           if successorEdge not in exploredEdges and (successorEdge, action) not in edges.list:
+               newActions = actions.copy()
+               newActions.append(action)
+               edges.push((successorEdge, newActions))
+
+    # no solution 
+    return []
 
 def breadthFirstSearch(problem: SearchProblem):
-    """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    edges = util.Queue() 
+    exploredEdges = set()
+    
+    edges.push((problem.getStartState(), []))  # push the initial state with no actions (origin)
+    
+    while not edges.isEmpty():
+        currentEdge, actions = edges.pop()  # get the current edge and actions to origin
+        
+        if currentEdge in exploredEdges:  # Skip if this state has already been explored
+            continue
+        
+        if problem.isGoalState(currentEdge):
+            return actions
+           
+        # if not goal state
+        exploredEdges.add(currentEdge)
+
+        for successorEdge, action, _ in problem.getSuccessors(currentEdge):
+            if successorEdge not in exploredEdges:
+                newActions = actions.copy()
+                newActions.append(action)
+                edges.push((successorEdge, newActions))
+
+    # no solution 
+    return []
+
 
 def uniformCostSearch(problem: SearchProblem):
-    """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    edges = util.PriorityQueue()  # Use a PriorityQueue for assigning step cost
+    exploredEdges = set()
+    
+    edges.push((problem.getStartState(), []), 0)  # push the initial state with no actions and cost 0
+    
+    while not edges.isEmpty():
+        currentEdge, actions = edges.pop()  # get the current edge and actions to origin
+        
+        if currentEdge in exploredEdges:  # Skip if this state has already been explored
+            continue
+        
+        if problem.isGoalState(currentEdge):
+            return actions
+           
+        # if not goal state
+        exploredEdges.add(currentEdge)
+
+        for successorEdge, action, _ in problem.getSuccessors(currentEdge):
+            if successorEdge not in exploredEdges:
+                newActions = actions.copy()
+                newActions.append(action)
+                newCost = problem.getCostOfActions(newActions)  # Get the total cost of the new actions
+                edges.push((successorEdge, newActions), newCost)  # Push with the new cost
+
+    # no solution 
+    return []
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +171,40 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
-def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
+def manhattanHeuristic(state, problem=None):
+
+    return 0
+
+
+
+def aStarSearch(problem, heuristic=manhattanHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    edges = util.PriorityQueue()
+    exploredEdges = set()
+
+    startState = problem.getStartState()
+    edges.push((startState, []), heuristic(startState, problem))
+
+    while not edges.isEmpty():
+        currentState, actions = edges.pop()
+
+        if problem.isGoalState(currentState):
+            return actions
+
+        if currentState not in exploredEdges:
+            exploredEdges.add(currentState)
+
+            for successor, action, stepCost in problem.getSuccessors(currentState):
+                newActions = actions + [action]
+                g = problem.getCostOfActions(newActions)
+                h = heuristic(successor, problem)
+                f = g + h
+
+                edges.push((successor, newActions), f)
+
+    return []
+
 
 
 # Abbreviations
