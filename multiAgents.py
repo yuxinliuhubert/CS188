@@ -91,17 +91,20 @@ class ReflexAgent(Agent):
         newManhattanDistances = [manhattanDistance(newPos, ghost.getPosition()) for ghost in newGhostStates] or [inf]
         if len(newManhattanDistances) != 0:
             closest_ghost_distance = min(newManhattanDistances)
-            closest_ghost_scared_time = min(newScaredTimes)
+        # get the scare time of the closest ghost
+            closest_ghost_index = newManhattanDistances.index(closest_ghost_distance)
+            closest_ghost_scared_time = newScaredTimes[closest_ghost_index]
+
      
 
             # penalty starts
             # penalize heavily if ghost is close
             if closest_ghost_scared_time == 0 and closest_ghost_distance <= 1:
-                score -= 500
+                score -= 1000
 
             # if the ghost is scared and close, then pacman should go towards it
             if closest_ghost_scared_time > 0 and closest_ghost_distance <= closest_ghost_scared_time:
-                score += 100
+                score += 300
 
                 
 
@@ -175,6 +178,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
             if gameState.isWin() or gameState.isLose() or depth == 0:
                 return self.evaluationFunction(gameState)
 
+            # For Pacman (maximizing agent)
+            if agent == 0:
+                return max(minimax(1, depth, gameState.generateSuccessor(agent, new_action))
+                           for new_action in gameState.getLegalActions(agent))
+            
             # For ghosts (minimizing agents)
             else:
                 next_agent = agent + 1  # Move to the next agent
@@ -208,7 +216,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         # maximazing agent
         def max_value(gameState, depth, alpha, beta):
             # end the game early if winning or losing is imminent
-            if gameState.isWin() or gameState.isLose():
+            if gameState.isWin() or gameState.isLose() or depth == 0:
                 return self.evaluationFunction(gameState)
             
             v = float("-inf")
@@ -219,8 +227,40 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 alpha = max(alpha, v)
             return v
         
+        # minimizing agent
+        def min_value(gameState, agentIndex, depth, alpha, beta):
+            # end the game early if winning or losing is imminent
+            if gameState.isWin() or gameState.isLose() or depth == 0:
+                return self.evaluationFunction(gameState)
+            
+            v = float("inf")
+            for action in gameState.getLegalActions(agentIndex):
+                if agentIndex == gameState.getNumAgents() - 1:
+                    v = min(v, max_value(gameState.generateSuccessor(agentIndex, action), depth - 1, alpha, beta))
+
+                else:
+                    v = min(v, min_value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta))
+                if v < alpha:
+                    return v
+                beta = min(beta, v)
+            return v
+        
+        alpha = float("-inf")
+        beta = float("inf")
+        bestValue = float("-inf")
         bestAction = Directions.STOP
-      
+
+        # best action for pacman
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            value = min_value(successor, 1, self.depth, alpha, beta)
+
+            # maximizing the value
+            if value > bestValue:
+                bestValue = value
+                bestAction = action
+            alpha = max(alpha, bestValue)
+
         return bestAction
         
 
@@ -237,6 +277,17 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+         # maximazing agent
+        def max_value(gameState, depth):
+            # end the game early if winning or losing is imminent
+            if gameState.isWin() or gameState.isLose() or depth == 0:
+                return self.evaluationFunction(gameState)
+            
+            v = float("-inf")
+            for action in gameState.getLegalActions(0):
+                # cannot skip anymore
+                v = max(v, exp_value(gameState.generateSuccessor(0, action), 1, depth))
+            return v
         
         # chance agent
         def exp_value(gameState, agentIndex, depth):
@@ -288,6 +339,12 @@ def betterEvaluationFunction(currentGameState: GameState):
     # Initialize score
     score = currentGameState.getScore()
     
+    # Distance to nearest food
+    foodList = curFood.asList()
+    if len(foodList) > 0:
+        nearestFoodDist = min([manhattanDistance(curPos, food) for food in foodList])
+        # The closer the food, the higher the score
+        score += 1.0 / nearestFoodDist
     
     # Distance to ghosts
     ghostDistances = [manhattanDistance(curPos, ghost.getPosition()) for ghost in curGhostStates]
@@ -302,6 +359,9 @@ def betterEvaluationFunction(currentGameState: GameState):
             # If the ghost is scared, closer is better
             score += 15.0 / dist
     
+    # Number of remaining food pellets
+    # slightly penalize for more food pellets
+    score -= 5 * len(foodList)
     
     return score
 
