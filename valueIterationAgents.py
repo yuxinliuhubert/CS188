@@ -30,6 +30,7 @@ import mdp, util
 
 from learningAgents import ValueEstimationAgent
 import collections
+from queue import PriorityQueue
 
 class ValueIterationAgent(ValueEstimationAgent):
     """
@@ -143,6 +144,9 @@ class PrioritizedSweepingValueIterationAgent(ValueIterationAgent):
         self.theta = theta
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
-    def runValueIteration(self):
+    def runValueIterationModified(self):
         "*** YOUR CODE HERE ***"
+        util.raiseNotDefined()
+
+
 
