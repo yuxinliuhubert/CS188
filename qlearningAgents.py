@@ -64,10 +64,10 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        legslActions = self.getLegalActions(state)
-        if not legslActions:
+        legalActions = self.getLegalActions(state)
+        if not legalActions:
             return 0.0
-        return max([self.getQValue(state, action) for action in legslActions]) # return the maximum Q value
+        return max([self.getQValue(state, action) for action in legalActions]) # return the maximum Q value
 
     def computeActionFromQValues(self, state):
         """
@@ -77,8 +77,6 @@ class QLearningAgent(ReinforcementAgent):
         """
         "*** YOUR CODE HERE ***"
         legalActions = self.getLegalActions(state)
-        if not legalActions: 
-            return None
         bestAction = None
         bestQValue = float("-inf")  # Start with negative infinity so any Q-value will be better
 
