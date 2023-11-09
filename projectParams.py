@@ -12,7 +12,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-STUDENT_CODE_DEFAULT = 'analysis.py,qlearningAgents.py,valueIterationAgents.py'
-PROJECT_TEST_CLASSES = 'reinforcementTestClasses.py'
-PROJECT_NAME = 'Project 3: Reinforcement learning'
+STUDENT_CODE_DEFAULT = 'factorOperations.py,inference.py,bustersAgents.py'
+PROJECT_TEST_CLASSES = 'bayesHMMTestClasses.py'
+PROJECT_NAME = 'Project 4: Bayes Nets and HMMs'
 BONUS_PIC = False
