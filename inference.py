@@ -346,7 +346,12 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total = sum(self.values())
+
+        if total == 0:
+            return
+        for key in self:
+            self[key] /= total
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -371,7 +376,20 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        if not self:  # Check if the distribution is empty
+            return None
+        totaWeight = 0
+        cumTotal = []
+        print(self)
+        for key, weight in self.items():
+            totalWeight += weight
+            cumTotal.append([key, totalWeight])
+
+        rand = random.uniform(0,totaWeight)
+
+        for key, totalWeight in cumTotal:
+            if rand < totalWeight:
+                return key
         "*** END YOUR CODE HERE ***"
 
 
@@ -446,7 +464,22 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+
+
+            
+        if ghostPosition == jailPosition:
+            if noisyDistance is None:
+                return 1
+            else:
+                return 0
+
+        if noisyDistance is None:
+            return 0
+
+
+        distance = manhattanDistance(pacmanPosition, ghostPosition)
+
+        return busters.getObservationProbability(noisyDistance, distance)
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
@@ -560,7 +593,16 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+        # make the belief distribution
+        updatedBeliefs = DiscreteDistribution()
+    
+
+        for position in self.allPositions:
+            updatedBeliefs[position] = self.getObservationProb(observation, pacmanPosition, position, jailPosition) * self.beliefs[position]
+
+        self.beliefs = updatedBeliefs
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
     
