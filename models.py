@@ -380,7 +380,8 @@ class LanguageIDModel(object):
         patience = 5
 
        
-        while current_accuracy < 0.81:
+        while current_accuracy < 0.83:
+            print("current accuracy", current_accuracy)
             for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
                 
