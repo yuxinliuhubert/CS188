@@ -96,8 +96,8 @@ class RegressionModel(object):
         """
         "*** YOUR CODE HERE ***"
         hidden_output1= nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
-        # hidden_output2 = nn.ReLU(nn.Linear(nn.AddBias(hidden_output1,self.b1), self.w2))
-        predicted_value = nn.AddBias(nn.Linear(hidden_output1, self.w_o), self.b_o)
+        hidden_output2 = nn.ReLU(nn .Linear(nn.AddBias(hidden_output1,self.b1), self.w2))
+        predicted_value = nn.AddBias(nn.Linear(hidden_output2, self.w_o), self.b_o)
         return predicted_value
 
     def get_loss(self, x, y):
@@ -277,7 +277,7 @@ class LanguageIDModel(object):
         "*** YOUR CODE HERE ***"
 
         self.batch_size = 100
-        self.learning_rate = -0.3
+        self.learning_rate = -0.2
 
         self.w1 = nn.Parameter(self.num_chars, hidden_layer_size)
         self.b1 = nn.Parameter(1, hidden_layer_size)
@@ -380,8 +380,8 @@ class LanguageIDModel(object):
         patience = 5
 
        
-        while best_accuracy < 0.81:
-            for x, y in dataset.iterate_once(60):
+        while current_accuracy < 0.81:
+            for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
                 
                 grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o, self.w2, self.b2, self.w1_hidden, self.b1_hidden, self.w2_hidden, self.b2_hidden])
@@ -404,9 +404,6 @@ class LanguageIDModel(object):
             else:
                 epochs_total += 1
 
-   
-
             # Early stopping if no improvement for a certain number of epochs
             if epochs_total >= patience:
-                epochs_total = 0
                 break
