@@ -10,13 +10,13 @@ class PerceptronModel(object):
         For example, dimensions=2 would mean that the perceptron must classify
         2D points.
         """
-  
+        self.w = nn.Parameter(1, dimensions)
 
     def get_weights(self):
         """
         Return a Parameter instance with the current weights of the perceptron.
         """
-    
+        return self.w
 
     def run(self, x):
         """
@@ -27,8 +27,8 @@ class PerceptronModel(object):
         Returns: a node containing a single number (the score)
         """
         "*** YOUR CODE HERE ***"
-
-
+        # print("NN DOT PROCUCT", nn.DotProduct(x, self.w))
+        return nn.DotProduct(x, self.w)
 
 
 
@@ -39,14 +39,27 @@ class PerceptronModel(object):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
-
+        if nn.as_scalar(self.run(x)) >= 0:
+            return 1
+        else:
+            return -1
 
     def train(self, dataset):
         """
         Train the perceptron until convergence.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            updated = False
+            for x, label in dataset.iterate_once(1):
+                actual_label = nn.as_scalar(label)
+                if self.get_prediction(x) != actual_label:
+                    
+                    self.w.update(x,actual_label)
+                    updated = True
 
+            if not updated:
+                break
         
 
 class RegressionModel(object):
@@ -59,6 +72,16 @@ class RegressionModel(object):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         hidden_layer_size =512
+        self.w1 = nn.Parameter(1, hidden_layer_size)
+        self.b1 = nn.Parameter(1, hidden_layer_size)
+        # self.w2 = nn.Parameter(hidden_layer_size,hidden_layer_size)
+
+        self.w2 = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        self.b2 = nn.Parameter(1, 1)
+
+
+        self.w_o = nn.Parameter(hidden_layer_size, 1)
+        self.b_o = nn.Parameter(1, 1)
         self.batch_size = 200
         self.learning_rate = -0.05
 
@@ -72,7 +95,10 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
-
+        hidden_output1= nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        # hidden_output2 = nn.ReLU(nn.Linear(nn.AddBias(hidden_output1,self.b1), self.w2))
+        predicted_value = nn.AddBias(nn.Linear(hidden_output1, self.w_o), self.b_o)
+        return predicted_value
 
     def get_loss(self, x, y):
         """
@@ -162,7 +188,12 @@ class DigitClassificationModel(object):
         """
         "*** YOUR CODE HERE ***"
   
+        hidden_output1= nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
         
+        hidden_output2 = nn.ReLU(nn.AddBias(nn.Linear(hidden_output1, self.w2),self.b2))
+        # hidden_output_last = nn.ReLU(nn.Linear(nn.AddBias(hidden_output2,self.b2), self.w3))
+        predicted_value = nn.AddBias(nn.Linear(hidden_output2, self.w_o), self.b_o)
+        return predicted_value
 
 
     def get_loss(self, x, y):
@@ -255,6 +286,13 @@ class LanguageIDModel(object):
         self.w2 = nn.Parameter(hidden_layer_size, hidden_layer_size)
         self.b2 = nn.Parameter(1, hidden_layer_size)
 
+        self.w1_hidden = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        self.b1_hidden = nn.Parameter(1, hidden_layer_size)
+    
+
+        self.w2_hidden = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        self.b2_hidden = nn.Parameter(1, hidden_layer_size)
+
 
         self.w_o = nn.Parameter(hidden_layer_size, 5)
         self.b_o = nn.Parameter(1, 5)
@@ -291,6 +329,29 @@ class LanguageIDModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+        for i in range(len(xs)):
+
+            # if i == 0:
+            #     # first letter
+            #     hidden_output1= nn.ReLU(nn.AddBias(nn.Linear(xs[i], self.w1), self.b1))
+            #     h = nn.AddBias(nn.Linear(hidden_output1, self.w2),self.b2)
+            # else:
+            #     hidden_output1= nn.ReLU(nn.AddBias(nn.Linear(xs[i], self.w1_hidden), self.b1_hidden))
+            #     h = nn.ReLU(nn.AddBias(nn.Linear(hidden_output1, self.w2_hidden),self.b2_hidden))
+
+            if i==0:
+                Z1 = nn.AddBias(nn.Linear(xs[i],self.w1),self.b1)
+                A1 = nn.ReLU(Z1)
+                h = nn.AddBias(nn.Linear(A1,self.w2),self.b2)
+            else:
+                Z_one = nn.AddBias(nn.Add(nn.Linear(xs[i], self.w1), nn.Linear(h, self.w1_hidden)),self.b1_hidden)
+                A_one = nn.ReLU(Z_one)
+                Z_two = nn.AddBias(nn.Linear(A_one,self.w2_hidden),self.b2_hidden)
+                h = nn.ReLU(Z_two)
+
+        predicted_value = nn.AddBias(nn.Linear(h, self.w_o), self.b_o)
+        return predicted_value
+
     def get_loss(self, xs, y):
         """
         Computes the loss for a batch of examples.
@@ -323,14 +384,18 @@ class LanguageIDModel(object):
             for x, y in dataset.iterate_once(60):
                 loss = self.get_loss(x, y)
                 
-                grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o, self.w2, self.b2])
+                grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o, self.w2, self.b2, self.w1_hidden, self.b1_hidden, self.w2_hidden, self.b2_hidden])
                 self.w1.update(grad[0], self.learning_rate)
                 self.b1.update(grad[1], self.learning_rate)
                 self.w_o.update(grad[2], self.learning_rate)
                 self.b_o.update(grad[3], self.learning_rate)
                 self.w2.update(grad[4], self.learning_rate)
                 self.b2.update(grad[5], self.learning_rate)
-      
+                self.w1_hidden.update(grad[6], self.learning_rate)
+                self.b1_hidden.update(grad[7], self.learning_rate)
+                self.w2_hidden.update(grad[8], self.learning_rate)
+                self.b2_hidden.update(grad[9], self.learning_rate)
+            
             current_accuracy = dataset.get_validation_accuracy()
 
             if current_accuracy > best_accuracy:
