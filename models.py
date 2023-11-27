@@ -10,13 +10,13 @@ class PerceptronModel(object):
         For example, dimensions=2 would mean that the perceptron must classify
         2D points.
         """
-        self.w = nn.Parameter(1, dimensions)
+  
 
     def get_weights(self):
         """
         Return a Parameter instance with the current weights of the perceptron.
         """
-        return self.w
+    
 
     def run(self, x):
         """
@@ -27,8 +27,8 @@ class PerceptronModel(object):
         Returns: a node containing a single number (the score)
         """
         "*** YOUR CODE HERE ***"
-        # print("NN DOT PROCUCT", nn.DotProduct(x, self.w))
-        return nn.DotProduct(x, self.w)
+
+
 
 
 
@@ -39,27 +39,14 @@ class PerceptronModel(object):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
-        if nn.as_scalar(self.run(x)) >= 0:
-            return 1
-        else:
-            return -1
+
 
     def train(self, dataset):
         """
         Train the perceptron until convergence.
         """
         "*** YOUR CODE HERE ***"
-        while True:
-            updated = False
-            for x, label in dataset.iterate_once(1):
-                actual_label = nn.as_scalar(label)
-                if self.get_prediction(x) != actual_label:
-                    
-                    self.w.update(x,actual_label)
-                    updated = True
 
-            if not updated:
-                break
         
 
 class RegressionModel(object):
@@ -71,6 +58,9 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        hidden_layer_size =512
+        self.batch_size = 200
+        self.learning_rate = -0.05
 
     def run(self, x):
         """
@@ -83,6 +73,7 @@ class RegressionModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
@@ -94,12 +85,28 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        predicted_value = self.run(x)
+        return nn.SquareLoss(predicted_value, y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+
+        while True:
+            for x, y in dataset.iterate_forever(self.batch_size):
+                loss = self.get_loss(x, y)
+                if nn.as_scalar(loss) < 0.02:
+                    return
+                grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o])
+                self.w1.update(grad[0], self.learning_rate)
+                self.b1.update(grad[1], self.learning_rate)
+                self.w_o.update(grad[2], self.learning_rate)
+                self.b_o.update(grad[3], self.learning_rate)
+
+
+
 
 class DigitClassificationModel(object):
     """
@@ -118,6 +125,26 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        hidden_layer_size = 512
+        self.batch_size = 100
+        self.learning_rate = -0.5
+
+        self.w1 = nn.Parameter(784, hidden_layer_size)
+        self.b1 = nn.Parameter(1, hidden_layer_size)
+        # self.w2 = nn.Parameter(hidden_layer_size,hidden_layer_size)
+
+        self.w2 = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        self.b2 = nn.Parameter(1, hidden_layer_size)
+
+        # # self.w2 = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        # # self.b2 = nn.Parameter(1, 1)
+
+        # self.w3 = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        # self.b3 = nn.Parameter(1, hidden_layer_size)
+
+        self.w_o = nn.Parameter(hidden_layer_size, 10)
+        self.b_o = nn.Parameter(1, 10)
+
 
     def run(self, x):
         """
@@ -134,6 +161,9 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+  
+        
+
 
     def get_loss(self, x, y):
         """
@@ -149,12 +179,50 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        current_accuracy = 0
+        best_accuracy = 0
+        epochs_total = 0
+        patience = 5
+
+       
+        while current_accuracy <= 0.975:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                
+                grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o, self.w2, self.b2])
+                self.w1.update(grad[0], self.learning_rate)
+                self.b1.update(grad[1], self.learning_rate)
+                self.w_o.update(grad[2], self.learning_rate)
+                self.b_o.update(grad[3], self.learning_rate)
+                self.w2.update(grad[4], self.learning_rate)
+                self.b2.update(grad[5], self.learning_rate)
+            
+            current_accuracy = dataset.get_validation_accuracy()
+
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                epochs_total = 0
+            else:
+                epochs_total += 1
+
+   
+
+            # Early stopping if no improvement for a certain number of epochs
+            if epochs_total >= patience:
+                epochs_total = 0
+                break
+
+        
+             
+
+
 
 class LanguageIDModel(object):
     """
@@ -173,7 +241,24 @@ class LanguageIDModel(object):
         self.languages = ["English", "Spanish", "Finnish", "Dutch", "Polish"]
 
         # Initialize your model parameters here
+
+        hidden_layer_size = 512
         "*** YOUR CODE HERE ***"
+
+        self.batch_size = 100
+        self.learning_rate = -0.3
+
+        self.w1 = nn.Parameter(self.num_chars, hidden_layer_size)
+        self.b1 = nn.Parameter(1, hidden_layer_size)
+  
+
+        self.w2 = nn.Parameter(hidden_layer_size, hidden_layer_size)
+        self.b2 = nn.Parameter(1, hidden_layer_size)
+
+
+        self.w_o = nn.Parameter(hidden_layer_size, 5)
+        self.b_o = nn.Parameter(1, 5)
+
 
     def run(self, xs):
         """
@@ -221,9 +306,42 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        current_accuracy = 0
+        best_accuracy = 0
+        epochs_total = 0
+        patience = 5
+
+       
+        while best_accuracy < 0.81:
+            for x, y in dataset.iterate_once(60):
+                loss = self.get_loss(x, y)
+                
+                grad = nn.gradients(loss, [self.w1, self.b1, self.w_o, self.b_o, self.w2, self.b2])
+                self.w1.update(grad[0], self.learning_rate)
+                self.b1.update(grad[1], self.learning_rate)
+                self.w_o.update(grad[2], self.learning_rate)
+                self.b_o.update(grad[3], self.learning_rate)
+                self.w2.update(grad[4], self.learning_rate)
+                self.b2.update(grad[5], self.learning_rate)
+      
+            current_accuracy = dataset.get_validation_accuracy()
+
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                epochs_total = 0
+            else:
+                epochs_total += 1
+
+   
+
+            # Early stopping if no improvement for a certain number of epochs
+            if epochs_total >= patience:
+                epochs_total = 0
+                break
